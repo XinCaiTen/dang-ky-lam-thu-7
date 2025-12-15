@@ -1,0 +1,9 @@
+{
+"name": "functions",
+"engines": { "node": "22" },
+"main": "index.js",
+"dependencies": {
+"firebase-admin": "^12",
+"firebase-functions": "^5"
+}
+}

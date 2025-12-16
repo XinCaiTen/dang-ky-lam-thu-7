@@ -1124,24 +1124,24 @@ document.getElementById('addPersonForm').addEventListener('submit', function(e) 
     addPerson();
 });
 
-onAuthStateChanged(auth, async (user) => {
-    // ...existing code...
-    if (user) {
-        currentUser = user;
-        // Lưu email vào Firestore nếu chưa có
-        const userRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
-        if (!userSnap.exists()) {
-            await setDoc(userRef, {
-                name: user.displayName,
-                email: user.email,
-                createdAt: new Date()
-            });
-        }
-        // ...existing code...
-    }
-    // ...existing code...
-});
+// onAuthStateChanged(auth, async (user) => {
+//     // ...existing code...
+//     if (user) {
+//         currentUser = user;
+//         // Lưu email vào Firestore nếu chưa có
+//         const userRef = doc(db, 'users', user.uid);
+//         const userSnap = await getDoc(userRef);
+//         if (!userSnap.exists()) {
+//             await setDoc(userRef, {
+//                 name: user.displayName,
+//                 email: user.email,
+//                 createdAt: new Date()
+//             });
+//         }
+//         // ...existing code...
+//     }
+//     // ...existing code...
+// });
 window.sendTestMail = async function() {
     const response = await fetch('https://us-central1-diem-danh-thu-7.cloudfunctions.net/sendTestMail', {
         method: 'POST',

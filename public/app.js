@@ -1,3 +1,52 @@
+// ============================================
+// SEND MAIL TO MANY PEOPLE FUNCTIONS
+// ============================================
+
+// Hàm lấy danh sách email từ nhân sự (Firestore)
+window.getAllUserEmails = async function() {
+    const usersSnapshot = await getDocs(collection(db, 'users'));
+    const emails = [];
+    usersSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.email && typeof data.email === 'string' && data.email.includes('@')) {
+            emails.push(data.email);
+        }
+    });
+    return emails;
+};
+
+// Hàm gửi mail cho nhiều người
+window.sendMailToMany = async function({ toList, subject, text }) {
+    if (!Array.isArray(toList) || toList.length === 0) {
+        alert('Danh sách email không hợp lệ!');
+        return;
+    }
+    try {
+        const response = await fetch('https://us-central1-diem-danh-thu-7.cloudfunctions.net/sendMailToMany', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ toList, subject, text })
+        });
+        const result = await response.json();
+        if (result.success > 0) {
+            alert(`Đã gửi thành công tới ${result.success} người!${result.fail > 0 ? '\nLỗi: ' + result.fail : ''}`);
+        } else {
+            alert('Không gửi được email nào!');
+        }
+    } catch (error) {
+        alert('Lỗi gửi mail: ' + error.message);
+    }
+};
+
+// Ví dụ: Gửi cho tất cả nhân sự có email
+// window.sendMailToAllUsers = async function() {
+//     const emails = await window.getAllUserEmails();
+//     await window.sendMailToMany({
+//         toList: emails,
+//         subject: 'Thông báo từ hệ thống Đăng ký Thứ 7',
+//         text: 'Đây là email gửi tự động từ hệ thống.'
+//     });
+// };
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, getDocs, query, where, orderBy, limit, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';

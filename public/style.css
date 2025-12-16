@@ -1,7 +1,7 @@
 :root {
-        --primary: #4f46e5;       /* Indigo 600 */
+        --primary: #466be5;       /* Indigo 600 */
         --primary-hover: #4338ca; /* Indigo 700 */
-        --secondary: #8b5cf6;     /* Violet 500 */
+        --secondary: #a45cf6;     /* Violet 500 */
         --success: #10b981;       /* Emerald 500 */
         --danger: #ef4444;        /* Red 500 */
         --warning: #f59e0b;       /* Amber 500 */

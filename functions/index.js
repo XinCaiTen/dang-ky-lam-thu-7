@@ -65,7 +65,7 @@ exports.sendMailToMany = functions.https.onRequest(async (req, res) => {
   const subject =
     req.body.subject ||
     req.query.subject ||
-    "Thông báo từ hệ thống Đăng ký Thứ 7";
+    "Thông báo từ hệ thống Đăng ký làm Thứ 7";
   const text =
     req.body.text || req.query.text || "Đây là email gửi tự động từ hệ thống.";
 
@@ -95,7 +95,7 @@ exports.sendMailToMany = functions.https.onRequest(async (req, res) => {
   res.status(200).send({ success, fail, errors });
 });
 
-// Function tự động gửi mail vào 8h sáng thứ 4 hàng tuần (GMT+7, lấy email từ Authentication)
+// Function tự động gửi mail vào 8h sáng thứ 6 hàng tuần (GMT+7, lấy email từ Authentication)
 exports.scheduledSendMail = functions.pubsub
   .schedule("every friday 08:00")
   .timeZone("Asia/Ho_Chi_Minh")
@@ -115,7 +115,7 @@ exports.scheduledSendMail = functions.pubsub
     // Subject, text, html: dùng giá trị mặc định vì Cloud Scheduler không có req/query
     const subject = "🔔 Nhắc đăng ký đi làm Thứ 7";
     const text =
-      "Bạn vui lòng đăng nhập hệ thống để đăng ký đi làm và ăn trưa Thứ 7 tuần này." +
+      "Bạn vui lòng truy cập trang web để đăng ký đi làm và ăn trưa Thứ 7 tuần này." +
       "\n\nVui lòng truy cập link: https://diem-danh-thu-7.web.app/ (Nếu link trên bị lỗi)." +
       "\n\n— Create by DuanNV";
 
@@ -123,12 +123,12 @@ exports.scheduledSendMail = functions.pubsub
     <div style="max-width:640px; margin:0 auto; padding:24px; border:1px solid #e5e7eb; border-radius:12px;">
       <h2 style="margin:0 0 12px; color:#111827;">Nhắc đăng ký đi làm Thứ 7</h2>
       <p style="margin:0 0 16px;">
-        Bạn vui lòng đăng nhập hệ thống để đăng ký <strong>đi làm</strong> và <strong>ăn trưa</strong> Thứ 7 tuần này.
+        Bạn vui lòng truy cập trang web để đăng ký <strong>đi làm</strong> và <strong>ăn trưa</strong> Thứ 7 tuần này.
       </p>
 
       <div style="margin:20px 0;">
         <a href="https://xincaiten.github.io/dang-ky-lam-thu-7/" style="display:inline-block; background:#2563eb; color:#fff; text-decoration:none; padding:10px 16px; border-radius:8px; font-weight:600;">
-          Truy cập hệ thống
+          Truy cập trang web
         </a>
       </div>
 
@@ -212,7 +212,7 @@ exports.sendMailToAllAuthUsers = functions.https.onRequest(async (req, res) => {
   const text =
     (req.body.text ||
       req.query.text ||
-      "Bạn vui lòng đăng nhập hệ thống để đăng ký đi làm và ăn trưa Thứ 7 tuần này.") +
+      "Bạn vui lòng truy cập trang web để đăng ký đi làm và ăn trưa Thứ 7 tuần này.") +
     "\n\nVui lòng truy cập link: https://1 hoặc https://2 (Nếu link trên bị lỗi)." +
     "\n\n— Được thực hiện bởi DuanNV";
 
@@ -223,12 +223,12 @@ exports.sendMailToAllAuthUsers = functions.https.onRequest(async (req, res) => {
     <div style="max-width:640px; margin:0 auto; padding:24px; border:1px solid #e5e7eb; border-radius:12px;">
       <h2 style="margin:0 0 12px; color:#111827;">Nhắc đăng ký đi làm Thứ 7</h2>
       <p style="margin:0 0 16px;">
-        Bạn vui lòng đăng nhập hệ thống để đăng ký <strong>đi làm</strong> và <strong>ăn trưa</strong> Thứ 7 tuần này.
+        Bạn vui lòng truy cập trang web để đăng ký <strong>đi làm</strong> và <strong>ăn trưa</strong> Thứ 7 tuần này.
       </p>
 
       <div style="margin:20px 0;">
         <a href="https://xincaiten.github.io/dang-ky-lam-thu-7/" style="display:inline-block; background:#2563eb; color:#fff; text-decoration:none; padding:10px 16px; border-radius:8px; font-weight:600;">
-          Truy cập hệ thống
+          Truy cập trang web
         </a>
       </div>
 
@@ -278,20 +278,22 @@ exports.sendWelcomeMailOnGoogleSignup = functions.auth.user().onCreate(async (us
   if (!user.email) return null;
 
   // Subject và nội dung chào mừng
-  const subject = "Bạn đã đăng ký tài khoản đi làm Thứ 7 thành công!";
+  const subject = "Bạn đã sẵn sàng sử dụng tài khoản Google để đăng ký làm Thứ 7!";
   const text =
     `Xin chào ${user.displayName || "bạn"},\n\n` +
-    "Cảm ơn bạn đã đăng nhập bằng Google. Bạn đã có thể sử dụng hệ thống để đăng ký đi làm và ăn trưa Thứ 7. \n\n" +
-    "Truy cập hệ thống tại: https://xincaiten.github.io/dang-ky-lam-thu-7/\n\n" +
+    "Cảm ơn bạn đã đăng nhập bằng Google. Bạn đã có thể sử dụng  để đăng ký đi làm và ăn trưa Thứ 7. \n\n" +
+    "Truy cập trang web tại: https://xincaiten.github.io/dang-ky-lam-thu-7/\n\n" +
     "— Create by DuanNV";
   const html =
     `<div style=\"font-family:Segoe UI, Roboto, Helvetica, Arial, sans-serif; color:#1f2937; line-height:1.6;\">` +
     `<div style=\"max-width:640px; margin:0 auto; padding:24px; border:1px solid #e5e7eb; border-radius:12px;\">` +
-    `<h2 style=\"margin:0 0 12px; color:#111827;\">Chào mừng bạn đến với hệ thống Đăng ký Thứ 7!</h2>` +
+    `<h2 style=\"margin:0 0 12px; color:#111827;\">Chào mừng bạn đến với website đăng ký làm việc thứ 7</h2>` +
     `<p style=\"margin:0 0 16px;\">Xin chào <strong>${user.displayName || user.email}</strong>,</p>` +
-    `<p style=\"margin:0 0 16px;\">Cảm ơn bạn đã đăng nhập bằng Google. Bạn đã có thể sử dụng hệ thống để đăng ký <strong>đi làm</strong> và <strong>ăn trưa</strong> Thứ 7. Hệ thống sẽ tự động gửi mail nhắc nhở đăng ký vào 8h sáng thứ 6 hằng tuần.</p>` +
+    `<p style=\"margin:0 0 16px;\">Giờ đây, bạn có thể dễ dàng sử dụng website để đăng ký <strong>đi làm</strong> và <strong>ăn trưa</strong> Thứ 7. </p>` +
+    `<p style=\"margin:0 0 16px; color:#FF0000;\">Hệ thống sẽ tự động gửi email nhắc nhở vào lúc 8h sáng mỗi Thứ 6 hàng tuần.</p>` +
+    `<p style=\"margin:0 0 16px;\">Chúc bạn có một trải nghiệm thật tốt khi sử dụng trang web này!</p>` +
     `<div style=\"margin:20px 0;\">` +
-    `<a href=\"https://xincaiten.github.io/dang-ky-lam-thu-7/\" style=\"display:inline-block; background:#2563eb; color:#fff; text-decoration:none; padding:10px 16px; border-radius:8px; font-weight:600;\">Truy cập hệ thống</a>` +
+    `<a href=\"https://xincaiten.github.io/dang-ky-lam-thu-7/\" style=\"display:inline-block; background:#2563eb; color:#fff; text-decoration:none; padding:10px 16px; border-radius:8px; font-weight:600;\">Truy cập trang web</a>` +
     `</div>` +
     `<hr style=\"border:none; border-top:1px solid #e5e7eb; margin:16px 0;\">` +
     `<p style=\"margin:8px 0 0; font-size:12px; color:#0055A8;\">— Create by <strong>DuanNV</strong></p>` +

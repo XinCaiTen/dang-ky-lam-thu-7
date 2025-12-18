@@ -463,3 +463,19 @@
     <script type="module" src="./public/app.js"></script>
 </body>
 </html>
+    <!-- Custom Delete Confirmation Modal -->
+    <div id="deleteConfirmModal" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 350px;">
+            <div class="modal-header">
+                <h2>Xác nhận xóa</h2>
+                <i class="ri-close-line close" onclick="closeDeleteConfirmModal()"></i>
+            </div>
+            <div class="modal-body">
+                <p id="deleteConfirmText" style="font-size: 15px; color: var(--danger); margin-bottom: 0;"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDeleteConfirmModal()">Hủy</button>
+                <button class="btn btn-primary" id="deleteConfirmBtn">Xóa</button>
+            </div>
+        </div>
+    </div>

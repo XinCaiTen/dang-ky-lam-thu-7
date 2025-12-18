@@ -705,14 +705,35 @@ window.addPerson = async function() {
     addBtn.textContent = 'Thêm ngay';
 };
 
-window.deletePerson = async function(userId, userName) {
-    if (!confirm(`Bạn có chắc muốn xóa "${userName}" khỏi danh sách?`)) {
-        return;
-    }
+// Custom delete confirmation modal logic
+let pendingDeleteUserId = null;
+let pendingDeleteUserName = null;
 
+window.deletePerson = function(userId, userName) {
+    pendingDeleteUserId = userId;
+    pendingDeleteUserName = userName;
+    document.getElementById('deleteConfirmText').textContent = `Bạn có chắc muốn xóa "${userName}" khỏi danh sách?`;
+    document.getElementById('deleteConfirmModal').style.display = 'block';
+    // Focus the Xóa button for accessibility
+    setTimeout(() => {
+        const btn = document.getElementById('deleteConfirmBtn');
+        if (btn) btn.focus();
+    }, 100);
+};
+
+window.closeDeleteConfirmModal = function() {
+    document.getElementById('deleteConfirmModal').style.display = 'none';
+    pendingDeleteUserId = null;
+    pendingDeleteUserName = null;
+};
+
+document.getElementById('deleteConfirmBtn').onclick = async function() {
+    if (!pendingDeleteUserId) return;
+    const userId = pendingDeleteUserId;
+    const userName = pendingDeleteUserName;
+    window.closeDeleteConfirmModal();
     try {
         await deleteDoc(doc(db, 'users', userId));
-
         const attendanceSnapshot = await getDocs(collection(db, 'attendance'));
         const deletePromises = attendanceSnapshot.docs.map(async (attendanceDoc) => {
             const data = attendanceDoc.data();
@@ -721,14 +742,11 @@ window.deletePerson = async function(userId, userName) {
                 await setDoc(doc(db, 'attendance', attendanceDoc.id), data);
             }
         });
-
         await Promise.all(deletePromises);
-
         await logHistory('delete_person', {
             userId: userId,
             userName: userName
         });
-
         showSaveIndicator();
     } catch (error) {
         console.error('Delete error:', error);

@@ -117,7 +117,7 @@ exports.scheduledSendMail = functions.pubsub
     const text =
       "Bạn vui lòng đăng nhập hệ thống để đăng ký đi làm và ăn trưa Thứ 7 tuần này." +
       "\n\nVui lòng truy cập link: https://diem-danh-thu-7.web.app/ (Nếu link trên bị lỗi)." +
-      "\n\n— Được thực hiện bởi DuanNV";
+      "\n\n— Create by DuanNV";
 
     const html = `<div style="font-family:Segoe UI, Roboto, Helvetica, Arial, sans-serif; color:#1f2937; line-height:1.6;">
     <div style="max-width:640px; margin:0 auto; padding:24px; border:1px solid #e5e7eb; border-radius:12px;">
@@ -246,10 +246,7 @@ exports.sendMailToAllAuthUsers = functions.https.onRequest(async (req, res) => {
       </p>
 
       <p style="margin:8px 0 0; font-size:12px; color:#0055A8;">
-        — Được thực hiện bởi <strong>DuanNV</strong>
-        <!-- Hoặc dùng câu gốc:
-        — Create by DuanNV
-        -->
+        — Create by <strong>DuanNV</strong>
       </p>
     </div>
   </div>`;
@@ -274,4 +271,44 @@ exports.sendMailToAllAuthUsers = functions.https.onRequest(async (req, res) => {
     }
   }
   res.status(200).send({ success, fail, errors });
+});
+// Function gửi mail khi user đăng nhập Google lần đầu (onCreate trigger)
+exports.sendWelcomeMailOnGoogleSignup = functions.auth.user().onCreate(async (user) => {
+  // Chỉ gửi nếu user có email
+  if (!user.email) return null;
+
+  // Subject và nội dung chào mừng
+  const subject = "Bạn đã đăng ký tài khoản đi làm Thứ 7 thành công!";
+  const text =
+    `Xin chào ${user.displayName || "bạn"},\n\n` +
+    "Cảm ơn bạn đã đăng nhập bằng Google. Bạn đã có thể sử dụng hệ thống để đăng ký đi làm và ăn trưa Thứ 7. \n\n" +
+    "Truy cập hệ thống tại: https://xincaiten.github.io/dang-ky-lam-thu-7/\n\n" +
+    "— Create by DuanNV";
+  const html =
+    `<div style=\"font-family:Segoe UI, Roboto, Helvetica, Arial, sans-serif; color:#1f2937; line-height:1.6;\">` +
+    `<div style=\"max-width:640px; margin:0 auto; padding:24px; border:1px solid #e5e7eb; border-radius:12px;\">` +
+    `<h2 style=\"margin:0 0 12px; color:#111827;\">Chào mừng bạn đến với hệ thống Đăng ký Thứ 7!</h2>` +
+    `<p style=\"margin:0 0 16px;\">Xin chào <strong>${user.displayName || user.email}</strong>,</p>` +
+    `<p style=\"margin:0 0 16px;\">Cảm ơn bạn đã đăng nhập bằng Google. Bạn đã có thể sử dụng hệ thống để đăng ký <strong>đi làm</strong> và <strong>ăn trưa</strong> Thứ 7. Hệ thống sẽ tự động gửi mail nhắc nhở đăng ký vào 8h sáng thứ 6 hằng tuần.</p>` +
+    `<div style=\"margin:20px 0;\">` +
+    `<a href=\"https://xincaiten.github.io/dang-ky-lam-thu-7/\" style=\"display:inline-block; background:#2563eb; color:#fff; text-decoration:none; padding:10px 16px; border-radius:8px; font-weight:600;\">Truy cập hệ thống</a>` +
+    `</div>` +
+    `<hr style=\"border:none; border-top:1px solid #e5e7eb; margin:16px 0;\">` +
+    `<p style=\"margin:8px 0 0; font-size:12px; color:#0055A8;\">— Create by <strong>DuanNV</strong></p>` +
+    `</div></div>`;
+
+  const mailOptions = {
+    from: "duannguyen0901@gmail.com",
+    to: user.email,
+    subject,
+    text,
+    html,
+  };
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Đã gửi mail chào mừng tới: ${user.email}`);
+  } catch (error) {
+    console.error("Lỗi gửi mail chào mừng:", error);
+  }
+  return null;
 });

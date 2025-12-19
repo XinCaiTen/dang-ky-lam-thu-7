@@ -1,14 +1,16 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
+const gmailEmail = functions.config().gmail.user;
+const gmailPassword = functions.config().gmail.pass;
 admin.initializeApp();
 
 // Cấu hình transporter với Gmail (hoặc SMTP khác)
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "duannguyen0901@gmail.com", // Email chính
-    pass: "flbg vqwn vzvw cjqd", // App Password
+    user: gmailEmail,//"duannguyen0901@gmail.com", // Email chính
+    pass: gmailPassword//"flbg vqwn vzvw cjqd", // App Password
   },
 });
 

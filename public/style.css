@@ -931,3 +931,79 @@
         margin: 0;
     }
 }
+/* Loader Screen */
+    #pageLoader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 99999;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+
+    #pageLoader.hidden {
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .loader-content {
+        text-align: center;
+        color: white;
+    }
+
+    .loader-spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .loader-text {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        font-family: 'Be Vietnam Pro', sans-serif;
+    }
+
+    .loader-subtext {
+        font-size: 14px;
+        opacity: 0.9;
+        font-family: 'Be Vietnam Pro', sans-serif;
+    }
+
+    .loader-progress {
+        width: 200px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 2px;
+        margin: 20px auto 0;
+        overflow: hidden;
+    }
+
+    .loader-progress-bar {
+        height: 100%;
+        background: white;
+        width: 0%;
+        transition: width 0.3s ease;
+        border-radius: 2px;
+    }
+
+    /* Ẩn nội dung chính khi đang load */
+    body.loading #loginScreen,
+    body.loading #mainApp {
+        opacity: 0;
+        visibility: hidden;
+    }

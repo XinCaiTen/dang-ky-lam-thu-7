@@ -391,7 +391,7 @@ async function logHistory(action, details) {
             action: action,
             details: details,
             user: userInfo,
-            timestamp: serverTimestamp()
+            timestamp: new Date()
         });
     } catch (error) {
         console.error('Log history error:', error);
@@ -621,10 +621,20 @@ async function processUpdateQueue() {
         const attendanceDoc = await getDoc(attendanceRef);
         const currentData = attendanceDoc.exists() ? attendanceDoc.data() : {};
         currentData[userId] = currentData[userId] || {};
-        const oldValue = currentData[userId][type];
+        const oldValue = currentData[userId][type] || false;
         currentData[userId][type] = checked;
+        
+        // Lấy userName từ employeeData, nếu không có thì lấy từ database
+        let userName = employeeData.find(e => e.id === userId)?.name;
+        if (!userName) {
+            const userDoc = await getDoc(doc(db, 'users', userId));
+            userName = userDoc.exists() ? userDoc.data().name : 'Không rõ';
+        }
+        
+        // Lưu attendance trước
         await setDoc(attendanceRef, currentData);
-        const userName = employeeData.find(e => e.id === userId)?.name;
+        
+        // Sau đó ghi log với đầy đủ thông tin
         const typeText = type === 'work' ? 'Đi làm' : 'Ăn trưa';
         await logHistory('update_status', {
             userId: userId,
@@ -635,11 +645,13 @@ async function processUpdateQueue() {
             oldValue: oldValue,
             newValue: checked
         });
+        
         showSaveIndicator();
     } catch (error) {
         console.error('Update error:', error);
         alert('Không thể lưu: ' + error.message);
-        document.getElementById(`${type}_${userId}`).checked = !checked;
+        const checkbox = document.getElementById(`${type}_${userId}`);
+        if (checkbox) checkbox.checked = !checked;
     } finally {
         isProcessingQueue = false;
         // Xử lý tiếp thao tác tiếp theo trong queue

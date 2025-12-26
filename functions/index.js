@@ -9,8 +9,8 @@ admin.initializeApp();
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: gmailEmail,//"duannguyen0901@gmail.com", // Email chính
-    pass: gmailPassword//"flbg vqwn vzvw cjqd", // App Password
+    user: gmailEmail,//"duannguyen0901@gmail.com", // Email
+    pass: gmailPassword // Password
   },
 });
 
@@ -176,7 +176,7 @@ exports.scheduledSendMail = functions.pubsub
     return null;
   });
 
-// Function hello cũ giữ nguyên
+// Function hello cũ
 exports.hello = functions.https.onRequest((req, res) => {
   res.send("Hello from Functions");
 });

@@ -180,6 +180,7 @@ onAuthStateChanged(auth, (user) => {
         loadData().then(() => {
             pageLoader.nextStep();
             loadRealtimeHistory();
+            setupChatListener(); // Khởi tạo chat listener
             setTimeout(() => { pageLoader.hide(); }, 500);
         });
     } else {
@@ -196,6 +197,7 @@ onAuthStateChanged(auth, (user) => {
             displayCurrentDate();
             loadData();
             loadRealtimeHistory();
+            setupChatListener(); // Khởi tạo chat listener cho guest
             document.body.classList.remove('loading');
             const pageLoaderEl = document.getElementById('pageLoader');
             if (pageLoaderEl) pageLoaderEl.classList.add('hidden');
@@ -248,6 +250,7 @@ window.submitGuestName = function() {
     displayCurrentDate();
     loadData();
     loadRealtimeHistory();
+    setupChatListener(); // Khởi tạo chat listener cho guest
     // Ẩn loader nếu còn
     document.body.classList.remove('loading');
     const pageLoaderEl = document.getElementById('pageLoader');
@@ -1234,3 +1237,240 @@ window.sendTestMail = async function() {
     const text = await response.text();
     alert(text);
 };
+
+// ============================================
+// CHAT FUNCTIONS
+// ============================================
+
+let unreadCount = 0;
+let chatUnsubscribe = null;
+
+window.toggleChatPanel = function() {
+    const chatPanel = document.getElementById('chatPanel');
+    const chatToggleBtn = document.getElementById('chatToggleBtn');
+    
+    chatPanel.classList.toggle('open');
+    
+    if (chatPanel.classList.contains('open')) {
+        chatToggleBtn.style.display = 'none';
+        resetUnreadCount();
+        scrollChatToBottom();
+    } else {
+        chatToggleBtn.style.display = 'flex';
+    }
+};
+
+function setupChatListener() {
+    if (chatUnsubscribe) chatUnsubscribe();
+    
+    const messagesRef = collection(db, 'chat');
+    const q = query(messagesRef, orderBy('timestamp', 'asc'), limit(100));
+    
+    chatUnsubscribe = onSnapshot(q, (snapshot) => {
+        const chatMessages = document.getElementById('chatMessages');
+        const chatPanel = document.getElementById('chatPanel');
+        
+        if (snapshot.empty) {
+            chatMessages.innerHTML = `
+                <div class="empty-state" style="padding: 20px;">
+                    <i class="ri-chat-3-line" style="font-size: 32px;"></i>
+                    <p style="font-size: 13px;">Chưa có tin nhắn nào</p>
+                </div>
+            `;
+            return;
+        }
+
+        const wasAtBottom = isScrollAtBottom(chatMessages);
+        
+        chatMessages.innerHTML = snapshot.docs.map(doc => {
+            const data = doc.data();
+            let isOwn = false;
+            
+            // Kiểm tra tin nhắn của mình
+            if (currentUser && currentUser.uid) {
+                isOwn = data.userId === currentUser.uid;
+            } else {
+                const guestToken = localStorage.getItem('guestToken');
+                isOwn = data.userId === guestToken;
+            }
+            
+            const time = data.timestamp?.toDate();
+            
+            // Count unread messages
+            if (!isOwn && !chatPanel.classList.contains('open') && time > new Date(Date.now() - 60000)) {
+                unreadCount++;
+            }
+            
+            return `
+                <div class="chat-message ${isOwn ? 'own' : ''}">
+                    <img src="${data.userAvatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(data.userName)}" 
+                         alt="${data.userName}" 
+                         class="chat-message-avatar">
+                    <div class="chat-message-content">
+                        <div class="chat-message-header">
+                            <span class="chat-message-name">${data.userName}</span>
+                            <span class="chat-message-time">${time ? formatTime(time) : 'Vừa xong'}</span>
+                        </div>
+                        <div class="chat-message-bubble">
+                            ${escapeHtml(data.message)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        updateChatBadge();
+        
+        if (wasAtBottom || chatPanel.classList.contains('open')) {
+            scrollChatToBottom();
+        }
+    });
+}
+
+window.sendMessage = async function(event) {
+    event.preventDefault();
+    
+    const chatInput = document.getElementById('chatInput');
+    const message = chatInput.value.trim();
+    
+    if (!message) return;
+    
+    try {
+        let userData = {};
+        
+        if (currentUser && currentUser.uid) {
+            // User đã đăng nhập bằng Google
+            userData = {
+                userId: currentUser.uid,
+                userName: currentUser.displayName || 'Người dùng',
+                userAvatar: currentUser.photoURL || ''
+            };
+        } else {
+            // User đăng nhập bằng guest
+            const guestToken = localStorage.getItem('guestToken');
+            const guestName = localStorage.getItem('guestName');
+            userData = {
+                userId: guestToken || 'guest',
+                userName: guestName || 'Khách',
+                userAvatar: ''
+            };
+        }
+        
+        const messagesRef = collection(db, 'chat');
+        await addDoc(messagesRef, {
+            message: message,
+            ...userData,
+            timestamp: new Date()
+        });
+        
+        chatInput.value = '';
+        scrollChatToBottom();
+    } catch (error) {
+        console.error('Error sending message:', error);
+        showToast('Không thể gửi tin nhắn. Vui lòng thử lại!', 'error');
+    }
+};
+
+function scrollChatToBottom() {
+    setTimeout(() => {
+        const chatMessages = document.getElementById('chatMessages');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }, 100);
+}
+
+function isScrollAtBottom(element) {
+    return element.scrollHeight - element.scrollTop <= element.clientHeight + 50;
+}
+
+function updateChatBadge() {
+    const chatBadge = document.getElementById('chatBadge');
+    if (unreadCount > 0) {
+        chatBadge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+        chatBadge.style.display = 'block';
+    } else {
+        chatBadge.style.display = 'none';
+    }
+}
+
+function resetUnreadCount() {
+    unreadCount = 0;
+    updateChatBadge();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatTime(date) {
+    const now = new Date();
+    const diff = now - date;
+    
+    // Nếu trong vòng 1 phút
+    if (diff < 60000) {
+        return 'Vừa xong';
+    }
+    
+    // Nếu cùng ngày
+    if (date.toDateString() === now.toDateString()) {
+        return date.toLocaleTimeString('vi-VN', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    }
+    
+    // Nếu khác ngày
+    return date.toLocaleDateString('vi-VN', { 
+        day: '2-digit', 
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function showToast(message, type = 'success') {
+    // Tạo toast element nếu chưa có
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 10000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+        `;
+        document.body.appendChild(toast);
+    }
+    
+    // Set màu dựa vào type
+    const colors = {
+        success: '#28a745',
+        error: '#dc3545',
+        warning: '#ffc107',
+        info: '#17a2b8'
+    };
+    
+    toast.style.background = colors[type] || colors.success;
+    toast.textContent = message;
+    
+    // Show toast
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(0)';
+    }, 10);
+    
+    // Hide toast after 3 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+    }, 3000);
+}

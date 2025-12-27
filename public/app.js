@@ -314,7 +314,15 @@ window.toggleHistory = function() {
 function getNextSaturday(date) {
     const result = new Date(date);
     const day = result.getDay();
-    const diff = (6 - day + 7) % 7 || 7;
+
+    // If today is already Saturday, return today
+    if (day === 6) {
+        result.setHours(0, 0, 0, 0);
+        return result;
+    }
+
+    // Otherwise, calculate the next Saturday
+    const diff = (6 - day + 7) % 7;
     result.setDate(result.getDate() + diff);
     result.setHours(0, 0, 0, 0);
     return result;

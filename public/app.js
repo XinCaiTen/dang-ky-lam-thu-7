@@ -135,6 +135,7 @@ let unsubscribeAttendance = null;
 let unsubscribeHistory = null;
 let currentUser = null;
 let previewData = [];
+let currentMonthStats = null; // Store stats for export
 
 // ============================================
 // PAGE LOADER MANAGER
@@ -217,6 +218,7 @@ window.loginAsGuest = function() {
 function openGuestNameModal() {
     document.getElementById('guestNameInput').value = '';
     document.getElementById('guestNameModal').style.display = 'block';
+    document.body.classList.add('modal-open');
     setTimeout(() => {
         document.getElementById('guestNameInput').focus();
     }, 100);
@@ -224,6 +226,7 @@ function openGuestNameModal() {
 
 window.closeGuestNameModal = function() {
     document.getElementById('guestNameModal').style.display = 'none';
+    document.body.classList.remove('modal-open');
 }
 
 window.submitGuestName = function() {
@@ -678,11 +681,13 @@ async function processUpdateQueue() {
 
 window.openAddModal = function() {
     document.getElementById('addModal').style.display = 'block';
+    document.body.classList.add('modal-open');
     document.getElementById('personName').focus();
 };
 
 window.closeAddModal = function() {
     document.getElementById('addModal').style.display = 'none';
+    document.body.classList.remove('modal-open');
     document.getElementById('addPersonForm').reset();
 };
 
@@ -737,6 +742,7 @@ window.deletePerson = function(userId, userName) {
     pendingDeleteUserName = userName;
     document.getElementById('deleteConfirmText').textContent = `Bạn có chắc muốn xóa "${userName}" khỏi danh sách?`;
     document.getElementById('deleteConfirmModal').style.display = 'block';
+    document.body.classList.add('modal-open');
     // Focus the Xóa button for accessibility
     setTimeout(() => {
         const btn = document.getElementById('deleteConfirmBtn');
@@ -746,6 +752,7 @@ window.deletePerson = function(userId, userName) {
 
 window.closeDeleteConfirmModal = function() {
     document.getElementById('deleteConfirmModal').style.display = 'none';
+    document.body.classList.remove('modal-open');
     pendingDeleteUserId = null;
     pendingDeleteUserName = null;
 };
@@ -843,6 +850,8 @@ window.exportToExcel = function() {
 
 window.openStatsModal = function() {
     document.getElementById('statsModal').style.display = 'block';
+    document.body.classList.add('modal-open');
+    document.getElementById('exportStatsBtn').style.display = 'none';
     const now = new Date();
     const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     document.getElementById('statsMonth').value = monthStr;
@@ -851,11 +860,18 @@ window.openStatsModal = function() {
 
 window.closeStatsModal = function() {
     document.getElementById('statsModal').style.display = 'none';
+    document.body.classList.remove('modal-open');
 };
 
 window.loadMonthStats = async function() {
     const monthStr = document.getElementById('statsMonth').value;
     if (!monthStr) return;
+
+    const chartBars = document.getElementById('chartBars');
+    const statsTableBody = document.getElementById('statsTableBody');
+    
+    chartBars.innerHTML = '<div style="width: 100%; text-align: center; padding: 20px;"><i class="ri-loader-4-line ri-spin" style="font-size: 24px;"></i><p>Đang tính toán...</p></div>';
+    statsTableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 20px;">Đang tải...</td></tr>';
 
     const [year, month] = monthStr.split('-');
     const startDate = new Date(year, month - 1, 1);
@@ -874,72 +890,164 @@ window.loadMonthStats = async function() {
     let totalWork = 0;
     let totalLunch = 0;
 
-    for (const saturday of saturdays) {
-        const dateStr = formatDateForAPI(saturday);
-        const attendanceDoc = await getDoc(doc(db, 'attendance', dateStr));
+    try {
+        // Fetch all attendance docs in parallel
+        const promises = saturdays.map(saturday => getDoc(doc(db, 'attendance', formatDateForAPI(saturday))));
+        const snapshots = await Promise.all(promises);
+
+        snapshots.forEach(attendanceDoc => {
+            if (attendanceDoc.exists()) {
+                const data = attendanceDoc.data();
+                Object.keys(data).forEach(userId => {
+                    if (!userStats[userId]) {
+                        // Try to find name in employeeData or use a placeholder
+                        const emp = employeeData.find(e => e.id === userId);
+                        userStats[userId] = { 
+                            name: emp ? emp.name : 'Nhân sự cũ', 
+                            work: 0, 
+                            lunch: 0 
+                        };
+                    }
+                    if (data[userId].work) {
+                        userStats[userId].work++;
+                        totalWork++;
+                    }
+                    if (data[userId].lunch) {
+                        userStats[userId].lunch++;
+                        totalLunch++;
+                    }
+                });
+            }
+        });
+
+        const avgWork = saturdays.length > 0 ? (totalWork / saturdays.length).toFixed(1) : 0;
+        const avgLunch = saturdays.length > 0 ? (totalLunch / saturdays.length).toFixed(1) : 0;
+
+        document.getElementById('avgWork').textContent = avgWork;
+        document.getElementById('avgLunch').textContent = avgLunch;
+
+        // Render Chart (Top 10 by Work)
+        const chartData = Object.keys(userStats).map(userId => ({
+            name: userStats[userId].name,
+            work: userStats[userId].work,
+            lunch: userStats[userId].lunch
+        }));
+
+        chartData.sort((a, b) => b.work - a.work);
+        const topUsers = chartData.slice(0, 10);
+
+        chartBars.innerHTML = '';
+        const maxCount = Math.max(...topUsers.map(u => Math.max(u.work, u.lunch)), 1);
+
+        topUsers.forEach(user => {
+            const workHeight = (user.work / maxCount) * 100;
+            const lunchHeight = (user.lunch / maxCount) * 100;
+            
+            const wrapper = document.createElement('div');
+            wrapper.className = 'chart-bar-wrapper';
+            
+            const barsContainer = document.createElement('div');
+            barsContainer.className = 'chart-bars-inner';
+
+            const workBar = document.createElement('div');
+            workBar.className = 'chart-bar-work';
+            workBar.title = `Đi làm: ${user.work}`;
+            workBar.style.height = `${workHeight}%`;
+            
+            const lunchBar = document.createElement('div');
+            lunchBar.className = 'chart-bar-lunch';
+            lunchBar.title = `Ăn trưa: ${user.lunch}`;
+            lunchBar.style.height = `${lunchHeight}%`;
+
+            barsContainer.appendChild(workBar);
+            barsContainer.appendChild(lunchBar);
+            
+            const name = document.createElement('div');
+            name.className = 'chart-bar-name';
+            name.textContent = user.name.split(' ').pop();
+            
+            wrapper.appendChild(barsContainer);
+            wrapper.appendChild(name);
+            chartBars.appendChild(wrapper);
+        });
+
+        // Render Table
+        statsTableBody.innerHTML = '';
+        // Sort all users by name for the table
+        const allUsers = Object.values(userStats).sort((a, b) => a.name.localeCompare(b.name));
         
-        if (attendanceDoc.exists()) {
-            const data = attendanceDoc.data();
-            Object.keys(data).forEach(userId => {
-                if (!userStats[userId]) {
-                    userStats[userId] = { work: 0, lunch: 0 };
-                }
-                if (data[userId].work) {
-                    userStats[userId].work++;
-                    totalWork++;
-                }
-                if (data[userId].lunch) {
-                    userStats[userId].lunch++;
-                    totalLunch++;
-                }
+        // Save for export
+        currentMonthStats = {
+            month: monthStr,
+            users: allUsers,
+            summary: { totalSaturdays: saturdays.length, avgWork, avgLunch }
+        };
+        document.getElementById('exportStatsBtn').style.display = 'flex';
+        
+        if (allUsers.length === 0) {
+            statsTableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 20px; color: var(--text-muted);">Không có dữ liệu trong tháng này</td></tr>';
+        } else {
+            allUsers.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${user.name}</td>
+                    <td style="text-align: center; font-weight: 600; color: var(--primary);">${user.work}</td>
+                    <td style="text-align: center; font-weight: 600; color: var(--info);">${user.lunch}</td>
+                `;
+                statsTableBody.appendChild(row);
             });
         }
+
+    } catch (error) {
+        console.error('Load stats error:', error);
+        chartBars.innerHTML = '<div style="color: var(--danger); padding: 20px;">Lỗi khi tải dữ liệu</div>';
+    }
+};
+
+window.exportMonthStats = function() {
+    if (!currentMonthStats || currentMonthStats.users.length === 0) {
+        alert('Không có dữ liệu để xuất!');
+        return;
     }
 
-    const avgWork = saturdays.length > 0 ? (totalWork / saturdays.length).toFixed(1) : 0;
-    const avgLunch = saturdays.length > 0 ? (totalLunch / saturdays.length).toFixed(1) : 0;
+    const data = currentMonthStats.users.map((user, index) => ({
+        'STT': index + 1,
+        'Họ và tên': user.name,
+        'Số buổi đi làm': user.work,
+        'Số buổi ăn trưa': user.lunch,
+        'Tỷ lệ đi làm (%)': ((user.work / currentMonthStats.summary.totalSaturdays) * 100).toFixed(1) + '%'
+    }));
 
-    document.getElementById('avgWork').textContent = avgWork;
-    document.getElementById('avgLunch').textContent = avgLunch;
-
-    const chartData = Object.keys(userStats).map(userId => {
-        const user = employeeData.find(e => e.id === userId);
-        return {
-            name: user ? user.name : 'Unknown',
-            count: userStats[userId].work
-        };
+    // Thêm dòng tổng kết
+    data.push({});
+    data.push({
+        'Họ và tên': 'TỔNG KẾT THÁNG',
+        'Số buổi đi làm': `TB: ${currentMonthStats.summary.avgWork}`,
+        'Số buổi ăn trưa': `TB: ${currentMonthStats.summary.avgLunch}`
+    });
+    data.push({
+        'Họ và tên': 'Tổng số ngày Thứ 7',
+        'Số buổi đi làm': currentMonthStats.summary.totalSaturdays
     });
 
-    chartData.sort((a, b) => b.count - a.count);
-    const topUsers = chartData.slice(0, 10);
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Thống kê tháng");
 
-    const chartBars = document.getElementById('chartBars');
-    chartBars.innerHTML = '';
+    // Căn chỉnh độ rộng cột
+    ws['!cols'] = [
+        { wch: 5 },  // STT
+        { wch: 25 }, // Họ tên
+        { wch: 15 }, // Đi làm
+        { wch: 15 }, // Ăn trưa
+        { wch: 15 }  // Tỷ lệ
+    ];
 
-    const maxCount = Math.max(...topUsers.map(u => u.count), 1);
-
-    topUsers.forEach(user => {
-        const height = (user.count / maxCount) * 100;
-        
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;';
-        
-        const value = document.createElement('div');
-        value.textContent = user.count;
-        value.style.cssText = 'font-size: 11px; font-weight: bold; margin-bottom: 4px;';
-        
-        const bar = document.createElement('div');
-        bar.style.cssText = `width: 100%; max-width: 30px; background: var(--primary); border-radius: 4px 4px 0 0; opacity: 0.8; height: ${height}%; transition: height 0.5s;`;
-        
-        const name = document.createElement('div');
-        name.textContent = user.name.split(' ').pop();
-        name.style.cssText = 'font-size: 10px; margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; text-align: center;';
-        
-        wrapper.appendChild(value);
-        wrapper.appendChild(bar);
-        wrapper.appendChild(name);
-        
-        chartBars.appendChild(wrapper);
+    XLSX.writeFile(wb, `Thong_ke_thang_${currentMonthStats.month}.xlsx`);
+    
+    logHistory('export_stats', {
+        month: currentMonthStats.month,
+        totalUsers: currentMonthStats.users.length
     });
 };
 
@@ -949,6 +1057,7 @@ window.loadMonthStats = async function() {
 
 window.openImportModal = function() {
     document.getElementById('importModal').style.display = 'block';
+    document.body.classList.add('modal-open');
     document.getElementById('importFile').value = '';
     document.getElementById('previewSection').style.display = 'none';
     document.getElementById('importProgress').style.display = 'none';
@@ -958,6 +1067,7 @@ window.openImportModal = function() {
 
 window.closeImportModal = function() {
     document.getElementById('importModal').style.display = 'none';
+    document.body.classList.remove('modal-open');
 };
 
 window.downloadTemplate = function() {
@@ -1124,6 +1234,7 @@ window.importUsers = async function() {
 
 window.openDatePicker = function() {
     document.getElementById('datePickerModal').style.display = 'block';
+    document.body.classList.add('modal-open');
     const dateStr = formatDateForAPI(currentSaturday);
     document.getElementById('customDate').value = dateStr;
     setTimeout(() => {
@@ -1133,6 +1244,7 @@ window.openDatePicker = function() {
 
 window.closeDatePicker = function() {
     document.getElementById('datePickerModal').style.display = 'none';
+    document.body.classList.remove('modal-open');
 };
 
 window.selectQuickDate = function(type) {
@@ -1228,11 +1340,12 @@ document.addEventListener('keydown', function(e) {
 
 // Modal click handler
 window.onclick = function(event) {
-    const modals = ['addModal', 'statsModal', 'importModal', 'datePickerModal'];
+    const modals = ['addModal', 'statsModal', 'importModal', 'datePickerModal', 'deleteConfirmModal', 'guestNameModal'];
     modals.forEach(modalId => {
         const modal = document.getElementById(modalId);
         if (event.target == modal) {
             modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
         }
     });
     

@@ -539,6 +539,12 @@
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     
+    /* Prevent background scroll when modal is open */
+    body.modal-open {
+        overflow: hidden;
+        padding-right: 8px; /* Avoid layout shift if scrollbar disappears */
+    }
+
     .modal-header {
         padding: 20px 24px;
         border-bottom: 1px solid var(--border);
@@ -705,6 +711,121 @@
     filter: invert(1);
 }
 
+/* Statistics Modal Styles */
+.stats-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.stats-summary-item {
+    text-align: center;
+    padding: 10px;
+    background: var(--bg-body);
+    border-radius: 8px;
+}
+
+.stats-summary-label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.stats-summary-value {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.stats-chart-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    height: 150px;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.stats-table-wrapper {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.stats-table thead {
+    position: sticky;
+    top: 0;
+    background: var(--bg-card);
+    z-index: 1;
+}
+
+.stats-table th {
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-body);
+    color: var(--text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stats-table td {
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-main);
+}
+
+/* Chart Bar Styles (for JS generated elements) */
+.chart-bar-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    min-width: 40px;
+}
+
+.chart-bars-inner {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 100%;
+    width: 100%;
+    justify-content: center;
+}
+
+.chart-bar-work {
+    width: 12px;
+    background: var(--primary);
+    border-radius: 2px 2px 0 0;
+    transition: height 0.5s;
+}
+
+.chart-bar-lunch {
+    width: 12px;
+    background: var(--info);
+    border-radius: 2px 2px 0 0;
+    transition: height 0.5s;
+}
+
+.chart-bar-name {
+    font-size: 10px;
+    margin-top: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+    text-align: center;
+    color: var(--text-muted);
+}
+
 /* =========================================
    MOBILE OPTIMIZATION (Thêm vào cuối style.css)
    ========================================= */
@@ -762,18 +883,23 @@
     }
 
     /* 3. BIẾN TABLE THÀNH CARD VIEW (Quan trọng) */
-    table, thead, tbody, th, td, tr {
+    #attendanceTable, 
+    #attendanceTable thead, 
+    #attendanceTable tbody, 
+    #attendanceTable th, 
+    #attendanceTable td, 
+    #attendanceTable tr {
         display: block;
     }
 
-    /* Ẩn tiêu đề bảng */
-    thead tr {
+    /* Ẩn tiêu đề bảng chính */
+    #attendanceTable thead tr {
         position: absolute;
         top: -9999px;
         left: -9999px;
     }
 
-    tbody tr {
+    #attendanceTable tbody tr {
         background: var(--bg-card);
         border: 1px solid var(--border);
         border-radius: 12px;
@@ -787,18 +913,18 @@
         box-shadow: var(--shadow-sm);
         transition: all 0.2s;
     }
-    tbody tr:hover {
+    #attendanceTable tbody tr:hover {
         box-shadow: var(--shadow-md);
         transform: translateY(-2px);
     }
 
     /* STT: Ẩn hoặc làm nhỏ */
-    td:nth-of-type(1) {
+    #attendanceTable td:nth-of-type(1) {
         display: none; 
     }
 
     /* Tên nhân viên */
-    td:nth-of-type(2) {
+    #attendanceTable td:nth-of-type(2) {
         padding: 0;
         font-weight: 600;
         font-size: 15px;
@@ -810,9 +936,9 @@
     }
 
     /* Các ô Checkbox và Delete */
-    td:nth-of-type(3), /* Work */
-    td:nth-of-type(4), /* Lunch */
-    td:nth-of-type(5)  /* Delete */ {
+    #attendanceTable td:nth-of-type(3), /* Work */
+    #attendanceTable td:nth-of-type(4), /* Lunch */
+    #attendanceTable td:nth-of-type(5)  /* Delete */ {
         padding: 0;
         text-align: center;
         border: none;
@@ -823,19 +949,19 @@
     }
 
     /* Thêm Label giả cho các nút checkbox để người dùng hiểu */
-    td:nth-of-type(3)::before { content: "Đi làm"; font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
-    td:nth-of-type(4)::before { content: "Ăn trưa"; font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
-    td:nth-of-type(5)::before { content: "Xóa"; font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
+    #attendanceTable td:nth-of-type(3)::before { content: "Đi làm"; font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
+    #attendanceTable td:nth-of-type(4)::before { content: "Ăn trưa"; font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
+    #attendanceTable td:nth-of-type(5)::before { content: "Xóa"; font-size: 10px; color: var(--text-muted); margin-bottom: 4px; }
 
     /* Layout lại lưới điều khiển bên dưới tên */
-    td:nth-of-type(3) { grid-column: 1; justify-self: start; flex-direction: row; gap: 8px; }
-    td:nth-of-type(3)::before { margin-bottom: 0; font-size: 13px; order: 2; } /* Label nằm sau checkbox */
+    #attendanceTable td:nth-of-type(3) { grid-column: 1; justify-self: start; flex-direction: row; gap: 8px; }
+    #attendanceTable td:nth-of-type(3)::before { margin-bottom: 0; font-size: 13px; order: 2; } /* Label nằm sau checkbox */
     
-    td:nth-of-type(4) { grid-column: 2; flex-direction: row; gap: 8px; }
-    td:nth-of-type(4)::before { margin-bottom: 0; font-size: 13px; order: 2; }
+    #attendanceTable td:nth-of-type(4) { grid-column: 2; flex-direction: row; gap: 8px; }
+    #attendanceTable td:nth-of-type(4)::before { margin-bottom: 0; font-size: 13px; order: 2; }
 
-    td:nth-of-type(5) { grid-column: 3; }
-    td:nth-of-type(5)::before { display: none; } /* Không cần label cho nút xóa */
+    #attendanceTable td:nth-of-type(5) { grid-column: 3; }
+    #attendanceTable td:nth-of-type(5)::before { display: none; } /* Không cần label cho nút xóa */
 
     /* 4. CUSTOM CHECKBOX STYLE (Toggle Switch) */
     input[type="checkbox"] {
@@ -929,6 +1055,110 @@
         height: 80%;
         max-height: 600px;
         margin: 0;
+    }
+
+    /* 7. Tối ưu Thống kê trên Mobile */
+    #statsModal .modal-content {
+        margin: 10px auto;
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    #statsModal .modal-body {
+        padding: 12px 16px;
+    }
+
+    .stats-summary-grid {
+        gap: 8px;
+        margin: 10px 0;
+    }
+
+    .stats-summary-item {
+        padding: 8px 4px;
+    }
+
+    .stats-summary-value {
+        font-size: 16px;
+    }
+
+    .stats-chart-container {
+        overflow-x: auto;
+        justify-content: flex-start;
+        padding-bottom: 10px;
+        gap: 12px;
+        height: 130px;
+    }
+
+    .chart-bar-wrapper {
+        min-width: 45px;
+        flex: 0 0 auto;
+    }
+
+    .stats-table-wrapper {
+        max-height: 200px;
+    }
+
+    .stats-table th, .stats-table td {
+        padding: 8px 6px;
+        font-size: 12px;
+    }
+
+    /* Tối ưu bảng chi tiết nhân sự trong thống kê trên mobile */
+    .stats-table-wrapper {
+        max-height: 300px;
+        overflow-x: hidden;
+    }
+
+    .stats-table tr {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .stats-table thead tr {
+        background: var(--bg-body);
+        padding: 8px 0;
+    }
+
+    .stats-table td, .stats-table th {
+        border: none;
+        padding: 0 8px;
+    }
+
+    .stats-table td:first-child, .stats-table th:first-child {
+        flex: 1;
+        text-align: left;
+        font-weight: 500;
+    }
+
+    .stats-table td:not(:first-child), .stats-table th:not(:first-child) {
+        width: 70px;
+        text-align: center;
+    }
+
+    .stats-table td:nth-child(2) {
+        color: var(--primary);
+        font-weight: 700;
+    }
+
+    .stats-table td:nth-child(3) {
+        color: var(--info);
+        font-weight: 700;
+    }
+
+    #statsModal .modal-footer {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    #statsModal .modal-footer .btn {
+        width: 100%;
+        margin: 0;
+        justify-content: center;
+        display: flex;
+        align-items: center;
     }
 }
 /* Loader Screen */

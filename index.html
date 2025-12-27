@@ -288,37 +288,55 @@
 
     <!-- Statistics Modal -->
     <div id="statsModal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width: 850px; margin: 30px auto;">
             <div class="modal-header">
                 <h2>Thống kê chi tiết</h2>
                 <i class="ri-close-line close" onclick="closeStatsModal()"></i>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
+            <div class="modal-body" style="padding: 15px 24px;">
+                <div class="form-group" style="margin-bottom: 15px;">
                     <label for="statsMonth">Chọn tháng</label>
                     <input type="month" id="statsMonth" onchange="loadMonthStats()">
                 </div>
 
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0;">
-                    <div style="text-align: center; padding: 15px; background: var(--bg-body); border-radius: 8px;">
-                        <div style="font-size: 12px; color: var(--text-muted);">Số ngày thứ 7</div>
-                        <div style="font-size: 24px; font-weight: bold; color: var(--primary);" id="totalSaturdays">0</div>
+                <div class="stats-summary-grid">
+                    <div class="stats-summary-item">
+                        <div class="stats-summary-label">Số ngày thứ 7</div>
+                        <div class="stats-summary-value" id="totalSaturdays" style="color: var(--primary);">0</div>
                     </div>
-                    <div style="text-align: center; padding: 15px; background: var(--bg-body); border-radius: 8px;">
-                        <div style="font-size: 12px; color: var(--text-muted);">TB đi làm</div>
-                        <div style="font-size: 24px; font-weight: bold; color: var(--success);" id="avgWork">0</div>
+                    <div class="stats-summary-item">
+                        <div class="stats-summary-label">TB đi làm</div>
+                        <div class="stats-summary-value" id="avgWork" style="color: var(--success);">0</div>
                     </div>
-                    <div style="text-align: center; padding: 15px; background: var(--bg-body); border-radius: 8px;">
-                        <div style="font-size: 12px; color: var(--text-muted);">TB ăn trưa</div>
-                        <div style="font-size: 24px; font-weight: bold; color: var(--info);" id="avgLunch">0</div>
+                    <div class="stats-summary-item">
+                        <div class="stats-summary-label">TB ăn trưa</div>
+                        <div class="stats-summary-value" id="avgLunch" style="color: var(--info);">0</div>
                     </div>
                 </div>
 
-                <h3 style="font-size: 16px; margin-bottom: 15px;">Top chăm chỉ</h3>
-                <div id="chartBars" style="display: flex; align-items: flex-end; justify-content: space-around; height: 200px; gap: 8px;">
+                <h3 style="font-size: 15px; margin-bottom: 10px;">Top chăm chỉ</h3>
+                <div id="chartBars" class="stats-chart-container">
+                </div>
+
+                <h3 style="font-size: 15px; margin-bottom: 10px;">Chi tiết nhân sự</h3>
+                <div class="stats-table-wrapper">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Nhân sự</th>
+                                <th style="text-align: center;">Đi làm</th>
+                                <th style="text-align: center;">Ăn trưa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statsTableBody">
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="exportMonthStats()" id="exportStatsBtn" style="margin-right: auto; display: none;">
+                    <i class="ri-file-excel-2-line"></i> Xuất Excel tháng
+                </button>
                 <button class="btn btn-secondary" onclick="closeStatsModal()">Đóng</button>
             </div>
         </div>

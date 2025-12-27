@@ -781,27 +781,62 @@ document.getElementById('deleteConfirmBtn').onclick = async function() {
 // EXPORT FUNCTIONS
 // ============================================
 
+// window.exportToExcel = function() {
+//     const data = employeeData.map((emp, index) => ({
+//         'STT': index + 1,
+//         'Họ và tên': emp.name,
+//         'Đi làm': emp.work ? 'Có' : 'Không',
+//         'Ăn trưa': emp.lunch ? 'Có' : 'Không'
+//     }));
+
+//     const ws = XLSX.utils.json_to_sheet(data);
+//     const wb = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(wb, ws, "Danh sách");
+
+//     const dateStr = formatDateForAPI(currentSaturday);
+//     XLSX.writeFile(wb, `Diem_danh_${dateStr}.xlsx`);
+
+//     logHistory('export_excel', {
+//         date: dateStr,
+//         totalRecords: data.length
+//     });
+// };
 window.exportToExcel = function() {
+    // Chuẩn bị dữ liệu
     const data = employeeData.map((emp, index) => ({
         'STT': index + 1,
         'Họ và tên': emp.name,
-        'Đi làm': emp.work ? 'Có' : 'Không',
-        'Ăn trưa': emp.lunch ? 'Có' : 'Không'
+        'Đi làm': emp.work ? '☑' : '☐', // Hiển thị checkbox
+        'Ăn trưa': emp.lunch ? '☑' : '☐' // Hiển thị checkbox
     }));
 
+    // Tính tổng số người đi làm và ăn trưa
+    const totalWork = employeeData.filter(emp => emp.work).length;
+    const totalLunch = employeeData.filter(emp => emp.lunch).length;
+
+    // Thêm dòng tổng cộng vào cuối
+    data.push({
+        'STT': '',
+        'Họ và tên': 'Tổng cộng',
+        'Đi làm': totalWork,
+        'Ăn trưa': totalLunch
+    });
+
+    // Tạo sheet Excel
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Danh sách");
 
+    // Định dạng ngày tháng để đặt tên file
     const dateStr = formatDateForAPI(currentSaturday);
     XLSX.writeFile(wb, `Diem_danh_${dateStr}.xlsx`);
 
+    // Ghi log
     logHistory('export_excel', {
         date: dateStr,
-        totalRecords: data.length
+        totalRecords: data.length - 1 // Trừ đi dòng tổng cộng
     });
 };
-
 // ============================================
 // STATISTICS FUNCTIONS
 // ============================================
